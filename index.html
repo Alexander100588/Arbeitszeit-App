@@ -1,157 +1,26 @@
-<!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Arbeitszeit">
-  <link rel="manifest" href="manifest.json">
-  <title>Arbeitszeit</title>
-  <style>
-    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;background:#f3f4f6}
-    *{box-sizing:border-box} body{margin:0;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom);max-width:720px;margin:auto}
-    header{padding:18px 4px 8px} h1{margin:0;font-size:30px} .today{color:#6b7280;margin-top:5px}
-    .card{background:#fff;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 2px 12px #00000010}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    button{border:0;border-radius:14px;padding:17px 10px;font-size:17px;font-weight:700;background:#e5e7eb;color:#111827}
-    button.primary{background:#111827;color:white} button.end{background:#fee2e2;color:#991b1b}
-    button.small{padding:10px 12px;font-size:14px;font-weight:600}
-    input,textarea{width:100%;font:inherit;padding:13px;border:1px solid #d1d5db;border-radius:12px;margin:6px 0 10px;background:white}
-    textarea{min-height:90px;resize:vertical}.hidden{display:none}
-    .entry{border-left:4px solid #9ca3af;padding:9px 10px;margin:10px 0;background:#f9fafb;border-radius:8px}
-    .entry strong{display:inline-block;min-width:54px}.entry .meta{font-size:13px;color:#6b7280;margin-top:4px}
-    .chips{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 10px}.chip{padding:9px 11px;border-radius:999px;background:#eef2ff;font-size:14px}
-    .row{display:flex;gap:8px}.row>*{flex:1}
-    .status{font-weight:700}.muted{color:#6b7280;font-size:14px}
-    nav{display:flex;gap:8px;margin-top:12px} nav button{flex:1;padding:12px;font-size:14px}
-    .activeTab{background:#111827;color:#fff}
-  </style>
-</head>
-<body>
-<header>
-  <h1>Arbeitszeit</h1>
-  <div class="today" id="today"></div>
-</header>
-
-<div class="card">
-  <div class="status" id="status">Noch nicht gestartet</div>
-  <div class="muted" id="currentPlace">Kein aktueller Einsatzort</div>
-</div>
-
-<div class="card grid">
-  <button class="primary" onclick="startWork()">▶ Arbeitsbeginn</button>
-  <button onclick="openPlace()">📍 Ortswechsel</button>
-  <button onclick="openNote()">✎ Notiz</button>
-  <button class="end" onclick="endWork()">■ Arbeitsende</button>
-</div>
-
-<div class="card hidden" id="placeBox">
-  <b>Neuer Einsatzort</b>
-  <div class="chips" id="recentPlaces"></div>
-  <input id="placeInput" placeholder="z. B. Firma, Schule, Feuerwehrhaus">
-  <div class="row"><button class="small" onclick="closeBoxes()">Abbrechen</button><button class="small primary" onclick="savePlace()">Speichern</button></div>
-</div>
-
-<div class="card hidden" id="noteBox">
-  <b>Was wurde gemacht?</b>
-  <textarea id="noteInput" placeholder="z. B. Schaltschrank verdrahtet, KNX programmiert …"></textarea>
-  <div class="row"><button class="small" onclick="closeBoxes()">Abbrechen</button><button class="small primary" onclick="saveNote()">Notiz speichern</button></div>
-</div>
-
-<nav>
- <button id="tabToday" class="activeTab" onclick="showToday()">Heute</button>
- <button id="tabAll" onclick="showAll()">Verlauf</button>
-</nav>
-
-<div class="card">
-  <h2 id="listTitle" style="margin-top:0">Heute</h2>
-  <div id="entries"></div>
-</div>
-
-<div class="card">
-  <div class="row">
-    <button class="small" onclick="exportCSV()">CSV exportieren</button>
-    <button class="small" onclick="backupJSON()">Sicherung</button>
-  </div>
-</div>
-
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><title>Arbeitszeit</title>
+<style>*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f4f6;color:#111827;margin:auto;max-width:700px;padding:18px 14px}h1{margin:4px 0}.muted{color:#6b7280}.card{background:white;border-radius:18px;padding:16px;margin:12px 0}.hero{text-align:center;padding:22px}.hero b{font-size:22px}.hero div{margin-top:7px}button{border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:700;width:100%}.start{background:#166534;color:white}.main{background:#111827;color:white}.end{background:#fee2e2;color:#991b1b;margin-top:10px}.hidden{display:none}input,textarea{width:100%;font:inherit;font-size:16px;padding:13px;border:1px solid #d1d5db;border-radius:12px;margin:8px 0}textarea{min-height:75px}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{width:auto;padding:9px 11px;background:#eef2ff;font-size:14px}.row{display:flex;gap:8px}.row button{flex:1}.small{font-size:14px;padding:11px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f9fafb;border-radius:12px;padding:12px}.metric b{display:block;font-size:20px;margin-top:4px}.entry{border-left:3px solid #d1d5db;padding:3px 8px 15px 15px;margin-left:5px}.time{font-weight:800}.note{margin-top:5px}.meta{font-size:13px;color:#6b7280;margin-top:5px}a{color:#4b5563}</style></head><body>
+<h1>Arbeitszeit</h1><div id="date" class="muted"></div>
+<div class="card hero"><b id="state">Bereit für den Arbeitstag</b><div id="where" class="muted">Noch nicht gestartet</div></div>
+<div class="card"><button id="primary" class="start">▶ Arbeit starten</button><button id="finish" class="end hidden">■ Arbeit beenden</button></div>
+<div id="form" class="card hidden"><b id="formTitle"></b><div id="recent" class="chips"></div><input id="place" placeholder="Einsatzort"><textarea id="note" placeholder="Was machst du dort? (optional)"></textarea><div class="row"><button id="cancel" class="small">Abbrechen</button><button id="save" class="small main">Speichern</button></div></div>
+<div id="endForm" class="card hidden"><b>Arbeitstag beenden</b><textarea id="endNote" placeholder="Abschlussnotiz (optional)"></textarea><div class="row"><button id="endCancel" class="small">Abbrechen</button><button id="endSave" class="small end" style="margin:0">Feierabend speichern</button></div></div>
+<div class="card summary"><div class="metric"><span class="muted">Beginn heute</span><b id="begin">–</b></div><div class="metric"><span class="muted">Zeit seit Beginn</span><b id="duration">–</b></div></div>
+<div class="card"><h2>Heute</h2><div id="entries"></div></div>
 <script>
-const KEY='arbeitszeit_v1';
-let data=JSON.parse(localStorage.getItem(KEY)||'{"entries":[],"recentPlaces":[],"working":false,"currentPlace":""}');
-let mode='today';
-const save=()=>localStorage.setItem(KEY,JSON.stringify(data));
-const now=()=>new Date();
-const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const time=d=>d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-const fullDate=d=>d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
-document.getElementById('today').textContent=fullDate(now());
-
-function add(type,text=''){
- const d=now(); data.entries.unshift({id:Date.now(),type,text,ts:d.toISOString()}); save(); render();
-}
-function startWork(){
- if(data.working && !confirm('Ein Arbeitstag läuft bereits. Trotzdem neuen Arbeitsbeginn speichern?'))return;
- data.working=true; add('Arbeitsbeginn');
-}
-function endWork(){
- if(!data.working && !confirm('Es ist kein Arbeitsbeginn aktiv. Arbeitsende trotzdem speichern?'))return;
- data.working=false; add('Arbeitsende');
-}
-function openPlace(){closeBoxes();document.getElementById('placeBox').classList.remove('hidden');renderPlaces();document.getElementById('placeInput').focus()}
-function openNote(){closeBoxes();document.getElementById('noteBox').classList.remove('hidden');document.getElementById('noteInput').focus()}
-function closeBoxes(){document.getElementById('placeBox').classList.add('hidden');document.getElementById('noteBox').classList.add('hidden')}
-function choosePlace(p){document.getElementById('placeInput').value=p}
-function renderPlaces(){
- let x=document.getElementById('recentPlaces');x.innerHTML='';
- data.recentPlaces.slice(0,6).forEach(p=>{let b=document.createElement('button');b.className='chip';b.textContent=p;b.onclick=()=>choosePlace(p);x.appendChild(b)})
-}
-function savePlace(){
- let p=document.getElementById('placeInput').value.trim();if(!p)return;
- data.currentPlace=p;data.recentPlaces=[p,...data.recentPlaces.filter(x=>x!==p)].slice(0,12);
- document.getElementById('placeInput').value='';closeBoxes();add('Ortswechsel',p);
-}
-function saveNote(){
- let n=document.getElementById('noteInput').value.trim();if(!n)return;
- document.getElementById('noteInput').value='';closeBoxes();add('Notiz',n);
-}
-function editEntry(id){
- let e=data.entries.find(x=>x.id===id); if(!e)return;
- let d=new Date(e.ts);
- let newText=prompt('Text / Ort:',e.text); if(newText===null)return;
- let newTime=prompt('Uhrzeit (HH:MM):',time(d)); if(newTime===null)return;
- if(/^\d{1,2}:\d{2}$/.test(newTime)){let [h,m]=newTime.split(':').map(Number);d.setHours(h,m,0,0);e.ts=d.toISOString()}
- e.text=newText.trim();save();render();
-}
-function deleteEntry(id){if(confirm('Eintrag wirklich löschen?')){data.entries=data.entries.filter(x=>x.id!==id);save();render()}}
-function showToday(){mode='today';document.getElementById('tabToday').className='activeTab';document.getElementById('tabAll').className='';render()}
-function showAll(){mode='all';document.getElementById('tabAll').className='activeTab';document.getElementById('tabToday').className='';render()}
-function render(){
- document.getElementById('status').textContent=data.working?'Arbeit läuft':'Noch nicht gestartet / beendet';
- document.getElementById('currentPlace').textContent=data.currentPlace?`Aktueller Ort: ${data.currentPlace}`:'Kein aktueller Einsatzort';
- let list=data.entries;
- if(mode==='today') list=list.filter(e=>dayKey(new Date(e.ts))===dayKey(now()));
- document.getElementById('listTitle').textContent=mode==='today'?'Heute':'Gesamter Verlauf';
- let box=document.getElementById('entries');box.innerHTML='';
- if(!list.length){box.innerHTML='<div class="muted">Noch keine Einträge.</div>';return}
- list.forEach(e=>{
-  let d=new Date(e.ts), div=document.createElement('div');div.className='entry';
-  div.innerHTML=`<strong>${time(d)}</strong> ${escapeHtml(e.type)}${e.text?` – ${escapeHtml(e.text)}`:''}
-  <div class="meta">${fullDate(d)} · <a href="#" onclick="editEntry(${e.id});return false">Bearbeiten</a> · <a href="#" onclick="deleteEntry(${e.id});return false">Löschen</a></div>`;
-  box.appendChild(div);
- });
-}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function exportCSV(){
- let rows=[['Datum','Uhrzeit','Typ','Ort/Notiz'],...data.entries.slice().reverse().map(e=>{let d=new Date(e.ts);return[d.toLocaleDateString('de-DE'),time(d),e.type,e.text]})];
- let csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(';')).join('\n');
- download('arbeitszeit.csv','text/csv;charset=utf-8','\ufeff'+csv);
-}
-function backupJSON(){download('arbeitszeit-sicherung.json','application/json',JSON.stringify(data,null,2))}
-function download(name,type,content){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-render();
-</script>
-</body>
-</html>
+const KEY='arbeitszeit_v1';let d;try{d=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){d={}};d.entries=Array.isArray(d.entries)?d.entries:[];d.recentPlaces=Array.isArray(d.recentPlaces)?d.recentPlaces:[];d.working=!!d.working;d.currentPlace=d.currentPlace||'';
+const $=x=>document.getElementById(x),save=()=>localStorage.setItem(KEY,JSON.stringify(d)),now=()=>new Date(),day=x=>x.toLocaleDateString('sv-SE'),tm=x=>x.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),today=()=>d.entries.filter(e=>day(new Date(e.ts))===day(now()));
+$('date').textContent=now().toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+function close(){ $('form').classList.add('hidden');$('endForm').classList.add('hidden') }
+function chips(){let c=$('recent');c.innerHTML='';d.recentPlaces.slice(0,6).forEach(p=>{let b=document.createElement('button');b.className='chip';b.textContent=p;b.onclick=()=>{$('place').value=p};c.appendChild(b)})}
+$('primary').onclick=()=>{close();$('formTitle').textContent=d.working?'Wohin wechselst du?':'Wo startest du heute?';$('save').textContent=d.working?'Ortswechsel speichern':'Arbeit starten';chips();$('form').classList.remove('hidden');$('place').focus()};
+$('cancel').onclick=close;$('endCancel').onclick=close;
+$('finish').onclick=()=>{close();$('endForm').classList.remove('hidden')};
+$('save').onclick=()=>{let p=$('place').value.trim(),n=$('note').value.trim();if(!p){alert('Bitte einen Einsatzort auswählen oder eingeben.');return}d.currentPlace=p;d.recentPlaces=[p,...d.recentPlaces.filter(x=>x!==p)].slice(0,12);let type=d.working?'Ortswechsel':'Arbeitsbeginn';d.working=true;d.entries.unshift({id:Date.now(),type,text:p,note:n,ts:now().toISOString()});$('place').value='';$('note').value='';save();close();render()};
+$('endSave').onclick=()=>{d.working=false;d.entries.unshift({id:Date.now(),type:'Arbeitsende',text:'',note:$('endNote').value.trim(),ts:now().toISOString()});$('endNote').value='';save();close();render()};
+function start(){return today().filter(e=>e.type==='Arbeitsbeginn').sort((a,b)=>new Date(a.ts)-new Date(b.ts))[0]}
+function end(){return today().filter(e=>e.type==='Arbeitsende').sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0]}
+function dur(){let s=start();if(!s)return'–';let z=d.working?now():(end()?new Date(end().ts):null);if(!z)return'–';let m=Math.max(0,Math.floor((z-new Date(s.ts))/60000));return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min'}
+function render(){ $('state').textContent=d.working?'Arbeit läuft':'Bereit für den Arbeitstag';$('where').textContent=d.working?'Aktuell: '+(d.currentPlace||'–'):'Noch nicht gestartet / bereits beendet';$('primary').textContent=d.working?'📍 Standort wechseln':'▶ Arbeit starten';$('primary').className=d.working?'main':'start';$('finish').classList.toggle('hidden',!d.working);let s=start();$('begin').textContent=s?tm(new Date(s.ts)):'–';$('duration').textContent=dur();let b=$('entries');b.innerHTML='';let a=today();if(!a.length){b.innerHTML='<span class="muted">Noch keine Einträge. Starte oben deinen Arbeitstag.</span>';return}a.forEach(e=>{let x=document.createElement('div');x.className='entry';let icon=e.type==='Arbeitsbeginn'?'🟢':e.type==='Arbeitsende'?'🔴':'📍';x.innerHTML='<span class="time">'+tm(new Date(e.ts))+'</span> <b>'+icon+' '+e.type+'</b>'+(e.text?' · '+e.text:'')+(e.note?'<div class="note">↳ '+e.note+'</div>':'')+'<div class="meta"><a href="#">Löschen</a></div>';x.querySelector('a').onclick=ev=>{ev.preventDefault();if(confirm('Eintrag löschen?')){d.entries=d.entries.filter(q=>q.id!==e.id);save();render()}};b.appendChild(x)})}
+render();setInterval(()=>{if(d.working)$('duration').textContent=dur()},60000);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
