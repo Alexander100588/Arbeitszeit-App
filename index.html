@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Arbeitszeit">
+  <link rel="manifest" href="manifest.json">
+  <title>Arbeitszeit</title>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;background:#f3f4f6}
+    *{box-sizing:border-box} body{margin:0;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom);max-width:720px;margin:auto}
+    header{padding:18px 4px 8px} h1{margin:0;font-size:30px} .today{color:#6b7280;margin-top:5px}
+    .card{background:#fff;border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 2px 12px #00000010}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button{border:0;border-radius:14px;padding:17px 10px;font-size:17px;font-weight:700;background:#e5e7eb;color:#111827}
+    button.primary{background:#111827;color:white} button.end{background:#fee2e2;color:#991b1b}
+    button.small{padding:10px 12px;font-size:14px;font-weight:600}
+    input,textarea{width:100%;font:inherit;padding:13px;border:1px solid #d1d5db;border-radius:12px;margin:6px 0 10px;background:white}
+    textarea{min-height:90px;resize:vertical}.hidden{display:none}
+    .entry{border-left:4px solid #9ca3af;padding:9px 10px;margin:10px 0;background:#f9fafb;border-radius:8px}
+    .entry strong{display:inline-block;min-width:54px}.entry .meta{font-size:13px;color:#6b7280;margin-top:4px}
+    .chips{display:flex;gap:7px;flex-wrap:wrap;margin:4px 0 10px}.chip{padding:9px 11px;border-radius:999px;background:#eef2ff;font-size:14px}
+    .row{display:flex;gap:8px}.row>*{flex:1}
+    .status{font-weight:700}.muted{color:#6b7280;font-size:14px}
+    nav{display:flex;gap:8px;margin-top:12px} nav button{flex:1;padding:12px;font-size:14px}
+    .activeTab{background:#111827;color:#fff}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Arbeitszeit</h1>
+  <div class="today" id="today"></div>
+</header>
+
+<div class="card">
+  <div class="status" id="status">Noch nicht gestartet</div>
+  <div class="muted" id="currentPlace">Kein aktueller Einsatzort</div>
+</div>
+
+<div class="card grid">
+  <button class="primary" onclick="startWork()">▶ Arbeitsbeginn</button>
+  <button onclick="openPlace()">📍 Ortswechsel</button>
+  <button onclick="openNote()">✎ Notiz</button>
+  <button class="end" onclick="endWork()">■ Arbeitsende</button>
+</div>
+
+<div class="card hidden" id="placeBox">
+  <b>Neuer Einsatzort</b>
+  <div class="chips" id="recentPlaces"></div>
+  <input id="placeInput" placeholder="z. B. Firma, Schule, Feuerwehrhaus">
+  <div class="row"><button class="small" onclick="closeBoxes()">Abbrechen</button><button class="small primary" onclick="savePlace()">Speichern</button></div>
+</div>
+
+<div class="card hidden" id="noteBox">
+  <b>Was wurde gemacht?</b>
+  <textarea id="noteInput" placeholder="z. B. Schaltschrank verdrahtet, KNX programmiert …"></textarea>
+  <div class="row"><button class="small" onclick="closeBoxes()">Abbrechen</button><button class="small primary" onclick="saveNote()">Notiz speichern</button></div>
+</div>
+
+<nav>
+ <button id="tabToday" class="activeTab" onclick="showToday()">Heute</button>
+ <button id="tabAll" onclick="showAll()">Verlauf</button>
+</nav>
+
+<div class="card">
+  <h2 id="listTitle" style="margin-top:0">Heute</h2>
+  <div id="entries"></div>
+</div>
+
+<div class="card">
+  <div class="row">
+    <button class="small" onclick="exportCSV()">CSV exportieren</button>
+    <button class="small" onclick="backupJSON()">Sicherung</button>
+  </div>
+</div>
+
+<script>
+const KEY='arbeitszeit_v1';
+let data=JSON.parse(localStorage.getItem(KEY)||'{"entries":[],"recentPlaces":[],"working":false,"currentPlace":""}');
+let mode='today';
+const save=()=>localStorage.setItem(KEY,JSON.stringify(data));
+const now=()=>new Date();
+const dayKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const time=d=>d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+const fullDate=d=>d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+document.getElementById('today').textContent=fullDate(now());
+
+function add(type,text=''){
+ const d=now(); data.entries.unshift({id:Date.now(),type,text,ts:d.toISOString()}); save(); render();
+}
+function startWork(){
+ if(data.working && !confirm('Ein Arbeitstag läuft bereits. Trotzdem neuen Arbeitsbeginn speichern?'))return;
+ data.working=true; add('Arbeitsbeginn');
+}
+function endWork(){
+ if(!data.working && !confirm('Es ist kein Arbeitsbeginn aktiv. Arbeitsende trotzdem speichern?'))return;
+ data.working=false; add('Arbeitsende');
+}
+function openPlace(){closeBoxes();document.getElementById('placeBox').classList.remove('hidden');renderPlaces();document.getElementById('placeInput').focus()}
+function openNote(){closeBoxes();document.getElementById('noteBox').classList.remove('hidden');document.getElementById('noteInput').focus()}
+function closeBoxes(){document.getElementById('placeBox').classList.add('hidden');document.getElementById('noteBox').classList.add('hidden')}
+function choosePlace(p){document.getElementById('placeInput').value=p}
+function renderPlaces(){
+ let x=document.getElementById('recentPlaces');x.innerHTML='';
+ data.recentPlaces.slice(0,6).forEach(p=>{let b=document.createElement('button');b.className='chip';b.textContent=p;b.onclick=()=>choosePlace(p);x.appendChild(b)})
+}
+function savePlace(){
+ let p=document.getElementById('placeInput').value.trim();if(!p)return;
+ data.currentPlace=p;data.recentPlaces=[p,...data.recentPlaces.filter(x=>x!==p)].slice(0,12);
+ document.getElementById('placeInput').value='';closeBoxes();add('Ortswechsel',p);
+}
+function saveNote(){
+ let n=document.getElementById('noteInput').value.trim();if(!n)return;
+ document.getElementById('noteInput').value='';closeBoxes();add('Notiz',n);
+}
+function editEntry(id){
+ let e=data.entries.find(x=>x.id===id); if(!e)return;
+ let d=new Date(e.ts);
+ let newText=prompt('Text / Ort:',e.text); if(newText===null)return;
+ let newTime=prompt('Uhrzeit (HH:MM):',time(d)); if(newTime===null)return;
+ if(/^\d{1,2}:\d{2}$/.test(newTime)){let [h,m]=newTime.split(':').map(Number);d.setHours(h,m,0,0);e.ts=d.toISOString()}
+ e.text=newText.trim();save();render();
+}
+function deleteEntry(id){if(confirm('Eintrag wirklich löschen?')){data.entries=data.entries.filter(x=>x.id!==id);save();render()}}
+function showToday(){mode='today';document.getElementById('tabToday').className='activeTab';document.getElementById('tabAll').className='';render()}
+function showAll(){mode='all';document.getElementById('tabAll').className='activeTab';document.getElementById('tabToday').className='';render()}
+function render(){
+ document.getElementById('status').textContent=data.working?'Arbeit läuft':'Noch nicht gestartet / beendet';
+ document.getElementById('currentPlace').textContent=data.currentPlace?`Aktueller Ort: ${data.currentPlace}`:'Kein aktueller Einsatzort';
+ let list=data.entries;
+ if(mode==='today') list=list.filter(e=>dayKey(new Date(e.ts))===dayKey(now()));
+ document.getElementById('listTitle').textContent=mode==='today'?'Heute':'Gesamter Verlauf';
+ let box=document.getElementById('entries');box.innerHTML='';
+ if(!list.length){box.innerHTML='<div class="muted">Noch keine Einträge.</div>';return}
+ list.forEach(e=>{
+  let d=new Date(e.ts), div=document.createElement('div');div.className='entry';
+  div.innerHTML=`<strong>${time(d)}</strong> ${escapeHtml(e.type)}${e.text?` – ${escapeHtml(e.text)}`:''}
+  <div class="meta">${fullDate(d)} · <a href="#" onclick="editEntry(${e.id});return false">Bearbeiten</a> · <a href="#" onclick="deleteEntry(${e.id});return false">Löschen</a></div>`;
+  box.appendChild(div);
+ });
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function exportCSV(){
+ let rows=[['Datum','Uhrzeit','Typ','Ort/Notiz'],...data.entries.slice().reverse().map(e=>{let d=new Date(e.ts);return[d.toLocaleDateString('de-DE'),time(d),e.type,e.text]})];
+ let csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(';')).join('\n');
+ download('arbeitszeit.csv','text/csv;charset=utf-8','\ufeff'+csv);
+}
+function backupJSON(){download('arbeitszeit-sicherung.json','application/json',JSON.stringify(data,null,2))}
+function download(name,type,content){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+</script>
+</body>
+</html>
